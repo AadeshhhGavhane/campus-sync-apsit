@@ -169,6 +169,7 @@ export function useTimetables() {
 // Custom hook for rooms data
 export function useRooms() {
   const { user } = useUser()
+  const { rooms, setRooms } = useAppStore()
   
   const query = useQuery({
     queryKey: queryKeys.rooms,
@@ -186,18 +187,16 @@ export function useRooms() {
     refetchOnReconnect: false,
     refetchOnMount: false,
   })
-
-  return {
-    rooms: query.data || [],
-    isLoading: query.isLoading,
-    error: query.error,
-    refetch: query.refetch,
-  }
+  useEffect(() => {
+    if (query.data) setRooms(query.data)
+  }, [query.data, setRooms])
+  return { rooms: rooms.length > 0 ? rooms : query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
 }
 
 // Custom hook for subjects data
 export function useSubjects() {
   const { user } = useUser()
+  const { subjects, setSubjects } = useAppStore()
   const query = useQuery({
     queryKey: queryKeys.subjects,
     queryFn: async () => {
@@ -214,11 +213,13 @@ export function useSubjects() {
     refetchOnReconnect: false,
     refetchOnMount: false,
   })
-  return { subjects: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
+  useEffect(() => { if (query.data) setSubjects(query.data) }, [query.data, setSubjects])
+  return { subjects: subjects.length > 0 ? subjects : query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
 }
 
 export function useLabs() {
   const { user } = useUser()
+  const { labs, setLabs } = useAppStore()
   const query = useQuery({
     queryKey: queryKeys.labs,
     queryFn: async () => {
@@ -233,11 +234,13 @@ export function useLabs() {
     refetchOnReconnect: false,
     refetchOnMount: false,
   })
-  return { labs: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
+  useEffect(() => { if (query.data) setLabs(query.data) }, [query.data, setLabs])
+  return { labs: labs.length > 0 ? labs : query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
 }
 
 export function useBatches() {
   const { user } = useUser()
+  const { batches, setBatches } = useAppStore()
   const query = useQuery({
     queryKey: queryKeys.batches,
     queryFn: async () => {
@@ -252,7 +255,8 @@ export function useBatches() {
     refetchOnReconnect: false,
     refetchOnMount: false,
   })
-  return { batches: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
+  useEffect(() => { if (query.data) setBatches(query.data) }, [query.data, setBatches])
+  return { batches: batches.length > 0 ? batches : query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
 }
 
 // Custom hook for logout mutation
@@ -311,6 +315,47 @@ export function usePrefetchData() {
         const response = await fetch('/api/timetables')
         const data = await response.json()
         return data.timetables || []
+      },
+      staleTime: Infinity,
+    })
+
+    // Sidebar resources
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.rooms,
+      queryFn: async () => {
+        const response = await fetch('/api/rooms')
+        const data = await response.json()
+        return data.rooms || []
+      },
+      staleTime: Infinity,
+    })
+
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.subjects,
+      queryFn: async () => {
+        const response = await fetch('/api/subjects')
+        const data = await response.json()
+        return data.subjects || []
+      },
+      staleTime: Infinity,
+    })
+
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.labs,
+      queryFn: async () => {
+        const response = await fetch('/api/labs')
+        const data = await response.json()
+        return data.labs || []
+      },
+      staleTime: Infinity,
+    })
+
+    queryClient.prefetchQuery({
+      queryKey: queryKeys.batches,
+      queryFn: async () => {
+        const response = await fetch('/api/batches')
+        const data = await response.json()
+        return data.batches || []
       },
       staleTime: Infinity,
     })

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,16 +9,24 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Plus, Edit, Trash2, FlaskConical } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { useLabs } from "@/hooks/use-app-data"
 
 interface Lab { _id: string; name: string; abbreviation?: string; organizationId: string; createdBy: string; createdAt: string }
 
 export default function LabsPageClient({ labs: initialLabs }: { labs: Lab[] }) {
+  const { labs: cachedLabs } = useLabs()
   const [labs, setLabs] = useState<Lab[]>(initialLabs)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Lab | null>(null)
   const [formData, setFormData] = useState({ name: "", abbreviation: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (cachedLabs && cachedLabs.length > 0) {
+      setLabs(cachedLabs as any)
+    }
+  }, [cachedLabs])
 
   const reset = () => { setFormData({ name: "", abbreviation: "" }); setError(""); setEditing(null); setShowForm(false) }
 

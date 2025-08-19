@@ -58,12 +58,14 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     return null
   }
 
-  const navItems = [
-    { href: "/home", title: "Dashboard", icon: Home },
-    { href: "/groups", title: "Groups", icon: Users },
-    { href: "/timetables", title: "Timetables", icon: Clock },
-    { href: "/calendars", title: "Calendars", icon: Calendar },
-    ...(user.role === "hod" ? [{ href: "/rooms", title: "Rooms", icon: Building2 }] : []),
+    const navItems = [
+     { href: "/home", title: "Dashboard", icon: Home },
+     { href: "/groups", title: "Groups", icon: Users },
+     { href: "/timetables", title: "Timetables", icon: Clock },
+     { href: "/calendars", title: "Calendars", icon: Calendar },
+     { href: "/availability/rooms", title: "Free Rooms", icon: Building2 },
+     { href: "/availability/faculty", title: "Free Faculty", icon: Users },
+     ...(user.role === "hod" ? [{ href: "/rooms", title: "Rooms", icon: Building2 }] : []),
     ...(user.role === "hod" ? [{ href: "/subjects", title: "Subjects", icon: BookOpen }] : []),
     ...(user.role === "hod" ? [{ href: "/labs", title: "Labs", icon: FlaskConical }] : []),
     ...(user.role === "hod" ? [{ href: "/batches", title: "Batches", icon: Layers }] : []),
