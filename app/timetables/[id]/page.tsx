@@ -28,6 +28,8 @@ interface TimetableSlot {
   type: string
   title: string
   faculty: string
+  room?: string
+  batchName?: string
 }
 
 interface User {
@@ -192,7 +194,7 @@ export default function TimetableViewPage({ params }: { params: Promise<{ id: st
                      slot.title || slot.type
 
     toast.info(slotTitle, {
-      description: `Faculty: ${slot.faculty || 'N/A'} • ${formatTimeToAMPM(slot.startTime)} - ${formatTimeToAMPM(slot.endTime)} • ${slot.type}`,
+      description: `Faculty: ${slot.faculty || 'N/A'} • ${formatTimeToAMPM(slot.startTime)} - ${formatTimeToAMPM(slot.endTime)} • ${slot.type}${slot.room ? ` • Room ${slot.room}` : ''}`,
       duration: 3000,
     })
   }
@@ -315,15 +317,14 @@ export default function TimetableViewPage({ params }: { params: Promise<{ id: st
                                   className={`p-2 rounded-lg border cursor-pointer transition-all hover:shadow-md hover:scale-105 ${getSlotTypeColor(slot.type)} h-full`}
                                   onClick={() => handleSlotClick(slot)}
                                 >
-                                  <div className="text-xs font-medium mb-1">
-                                    {slot.type === "break" ? "Break" : 
-                                     slot.type === "mini-project" ? "Mini Project" : 
-                                     slot.title || slot.type}
+                                  <div className="text-xs font-medium mb-1" title={slot.title}>
+                                    {(slot as any).abbreviation || slot.title || slot.type}
                                   </div>
-                                  {slot.type !== "break" && slot.type !== "mini-project" && slot.faculty && (
-                                  <div className="text-xs opacity-75 flex items-center">
-                                    <User className="h-3 w-3 mr-1" />
-                                    {slot.faculty}
+                                  {slot.type !== "break" && slot.type !== "mini-project" && (
+                                  <div className="text-xs opacity-75 flex items-center gap-2">
+                                    {slot.faculty && (<span className="inline-flex items-center"><User className="h-3 w-3 mr-1" />{slot.faculty}</span>)}
+                                    {slot.room && (<span className="inline-flex items-center">Room {slot.room}</span>)}
+                                    {slot.batchName && (<span className="inline-flex items-center">{slot.batchName}</span>)}
                                   </div>
                                   )}
                                 </div>
@@ -364,15 +365,14 @@ export default function TimetableViewPage({ params }: { params: Promise<{ id: st
                             className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md hover:scale-105 ${getSlotTypeColor(slot.type)} h-full`}
                             onClick={() => handleSlotClick(slot)}
                           >
-                            <div className="text-sm font-medium mb-2">
-                              {slot.type === "break" ? "Break" : 
-                               slot.type === "mini-project" ? "Mini Project" : 
-                               slot.title || slot.type}
+                            <div className="text-sm font-medium mb-2" title={slot.title}>
+                              {(slot as any).abbreviation || slot.title || slot.type}
                             </div>
-                            {slot.type !== "break" && slot.type !== "mini-project" && slot.faculty && (
-                              <div className="text-sm opacity-75 flex items-center">
-                                <User className="h-4 w-4 mr-1" />
-                                {slot.faculty}
+                            {slot.type !== "break" && slot.type !== "mini-project" && (
+                              <div className="text-sm opacity-75 flex items-center gap-2">
+                                {slot.faculty && (<span className="inline-flex items-center"><User className="h-4 w-4 mr-1" />{slot.faculty}</span>)}
+                                {slot.room && (<span className="inline-flex items-center">Room {slot.room}</span>)}
+                                {slot.batchName && (<span className="inline-flex items-center">{slot.batchName}</span>)}
                               </div>
                             )}
                           </div>
@@ -414,16 +414,17 @@ export default function TimetableViewPage({ params }: { params: Promise<{ id: st
                         <div className="flex items-center space-x-4">
                           <Badge className={getSlotTypeColor(slot.type)}>{slot.type}</Badge>
                           <div>
-                            <div className="font-medium">{slot.title}</div>
+                            <div className="font-medium" title={slot.title}>{(slot as any).abbreviation || slot.title}</div>
                             <div className="text-sm text-gray-600 flex items-center space-x-4">
                               <span>{slot.dayOfWeek}</span>
                               <span>
                                 {formatTimeToAMPM(slot.startTime)} - {formatTimeToAMPM(slot.endTime)}
                               </span>
-                              <span className="flex items-center">
-                                <User className="h-3 w-3 mr-1" />
-                                {slot.faculty}
-                              </span>
+                              <span className="flex items-center gap-2">
+                                  <span className="inline-flex items-center"><User className="h-3 w-3 mr-1" />{slot.faculty}</span>
+                                  {slot.room && (<span className="inline-flex items-center">Room {slot.room}</span>)}
+                                  {slot.batchName && (<span className="inline-flex items-center">{slot.batchName}</span>)}
+                                </span>
                             </div>
                           </div>
                         </div>

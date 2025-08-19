@@ -21,7 +21,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { LoadingPage } from "@/components/ui/loading-spinner"
-import { useGroups, useUser } from "@/hooks/use-app-data"
+import { useGroups, useUser, useRooms } from "@/hooks/use-app-data"
+import { useSubjects } from "@/hooks/use-app-data"
+import { useBatches } from "@/hooks/use-app-data"
+import { useLabs } from "@/hooks/use-app-data"
 
 interface TimetableSlot {
   dayOfWeek: string
@@ -29,9 +32,14 @@ interface TimetableSlot {
   endTime: string
   type: string
   title: string
+  subjectId?: string
+  labId?: string
   faculty: string
   facultyUserId?: string
   room?: string
+  groupId?: string // Add groupId to track which group is selected
+  batchName?: string
+  batchId?: string
 }
 
 interface Timetable {
@@ -57,6 +65,10 @@ export default function EditTimetablePage() {
   const [fetchLoading, setFetchLoading] = useState(true)
   const { groups } = useGroups()
   const { user } = useUser()
+  const { rooms } = useRooms()
+  const { subjects } = useSubjects()
+  const { batches } = useBatches()
+  const { labs } = useLabs()
   const [groupIdToMembers, setGroupIdToMembers] = useState<Record<string, any[]>>({})
 
   // Fetch existing timetable data
@@ -73,15 +85,29 @@ export default function EditTimetablePage() {
           name: data.timetable.name,
           description: data.timetable.description || "",
         })
+
+        // Auto-load members for all accessible groups so faculty can be selected
+        for (const group of groups) {
+          if (group._id) {
+            await loadMembers(group._id)
+          }
+        }
+
+        // Set initial slots
         setSlots((data.timetable.slots || []).map((s: any) => ({
           dayOfWeek: s.dayOfWeek,
           startTime: s.startTime,
           endTime: s.endTime,
           type: s.type,
           title: s.title || "",
+          subjectId: s.subjectId,
+          labId: s.labId,
           faculty: s.faculty || "",
           facultyUserId: s.facultyUserId,
-          room: s.room,
+          room: s.room || "none",
+          groupId: s.groupId, // Initialize groupId
+          batchName: s.batchName || "none",
+          batchId: s.batchId,
         })))
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch timetable")
@@ -90,25 +116,63 @@ export default function EditTimetablePage() {
       }
     }
 
-    if (timetableId) {
+    if (timetableId && groups.length > 0) {
       fetchTimetable()
     }
-  }, [timetableId])
+  }, [timetableId, groups])
+
+  // Determine groupId for existing slots after members are loaded
+  useEffect(() => {
+    if (slots.length > 0 && Object.keys(groupIdToMembers).length > 0) {
+      const updatedSlots = [...slots]
+      let hasChanges = false
+      
+      for (let i = 0; i < updatedSlots.length; i++) {
+        const slot = updatedSlots[i]
+        if (slot.facultyUserId && !slot.groupId) {
+          // Find which group this faculty member belongs to
+          for (const [groupId, members] of Object.entries(groupIdToMembers)) {
+            const member = (members as any[]).find((m: any) => m._id === slot.facultyUserId)
+            if (member) {
+              updatedSlots[i] = { ...slot, groupId }
+              hasChanges = true
+              break
+            }
+          }
+        }
+      }
+      
+      if (hasChanges) {
+        setSlots(updatedSlots)
+      }
+    }
+  }, [slots, groupIdToMembers])
 
   const addSlot = () => {
-    setSlots([
-      ...slots,
-      {
-        dayOfWeek: "Monday",
-        startTime: "09:00",
-        endTime: "10:00",
-        type: "lecture",
-        title: "",
-        faculty: "",
-        facultyUserId: undefined,
-        room: "",
-      },
-    ])
+    setSlots((prev) => {
+      if (prev.length === 0) {
+        return [
+          {
+            dayOfWeek: "Monday",
+            startTime: "09:00",
+            endTime: "10:00",
+            type: "lecture",
+            title: "",
+            subjectId: undefined,
+            labId: undefined,
+            faculty: "",
+            facultyUserId: undefined,
+            room: "none",
+            groupId: undefined,
+            batchName: "none",
+            batchId: undefined,
+          },
+        ]
+      }
+      const last = prev[prev.length - 1]
+      const duplicated = { ...last }
+      return [...prev, duplicated]
+    })
   }
 
   const removeSlot = (index: number) => {
@@ -116,9 +180,19 @@ export default function EditTimetablePage() {
   }
 
   const updateSlot = (index: number, field: keyof TimetableSlot, value: string | undefined) => {
-    const updatedSlots = [...slots]
-    updatedSlots[index] = { ...updatedSlots[index], [field]: value }
-    setSlots(updatedSlots)
+    setSlots((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
+  }
+
+  const updateSlotMany = (index: number, patch: Partial<TimetableSlot>) => {
+    setSlots((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], ...patch }
+      return updated
+    })
   }
 
   const loadMembers = async (groupId: string) => {
@@ -140,7 +214,14 @@ export default function EditTimetablePage() {
       const response = await fetch(`/api/timetables/${timetableId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...formData, slots }),
+        body: JSON.stringify({ 
+          ...formData, 
+          slots: slots.map(slot => ({
+            ...slot,
+            room: slot.room === "none" ? "" : slot.room,
+            batchName: slot.batchName === "none" ? "" : slot.batchName
+          }))
+        }),
       })
 
       const data = await response.json()
@@ -269,10 +350,12 @@ export default function EditTimetablePage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Time Slots</h3>
-                  <Button type="button" onClick={addSlot} variant="outline" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Slot
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button type="button" onClick={addSlot} variant="outline" size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Slot
+                    </Button>
+                  </div>
                 </div>
 
                 {slots.length === 0 ? (
@@ -287,8 +370,20 @@ export default function EditTimetablePage() {
                 ) : (
                   <div className="space-y-4">
                     {slots.map((slot, index) => (
-                      <Card key={index} className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                      <Card key={index} className="p-4 border-l-4 border-l-blue-500">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="font-medium">Slot {index + 1}</h4>
+                          <Button
+                            type="button"
+                            onClick={() => removeSlot(index)}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           <div>
                             <Label>Day</Label>
                             <Select
@@ -345,42 +440,106 @@ export default function EditTimetablePage() {
                             </Select>
                           </div>
 
-                          <div>
-                            <Label>Subject/Title</Label>
-                            <Input
-                              placeholder={
-                                slot.type === "break" 
-                                  ? "Break (optional)" 
-                                  : slot.type === "mini-project"
-                                  ? "Mini Project (optional)"
-                                  : "e.g., Data Structures"
-                              }
-                              value={slot.title}
-                              onChange={(e) => updateSlot(index, "title", e.target.value)}
-                              disabled={slot.type === "break" || slot.type === "mini-project"}
-                            />
-                          </div>
+                          <div className="lg:col-span-2">
+                             <Label>{slot.type === "lab" ? "Lab" : "Subject"}</Label>
+                             {slot.type === "lab" ? (
+                               <Select
+                                 value={slot.labId || ""}
+                                 onValueChange={(id) => {
+                                   const l = labs.find((x: any) => x._id === id)
+                                   updateSlotMany(index, { labId: id, title: l ? l.name : "" })
+                                 }}
+                               >
+                                 <SelectTrigger className="truncate">
+                                   <SelectValue placeholder="Select lab" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {labs.map((l: any) => (
+                                     <SelectItem key={l._id} value={l._id}>
+                                       {l.name}{l.abbreviation ? ` (${l.abbreviation})` : ""}
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                             ) : (
+                               <Select
+                                 value={slot.subjectId || ""}
+                                 onValueChange={(id) => {
+                                   const s = subjects.find((x: any) => x._id === id)
+                                   updateSlotMany(index, { subjectId: id, title: s ? s.name : "" })
+                                 }}
+                               >
+                                 <SelectTrigger className="truncate">
+                                   <SelectValue placeholder="Select subject" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   {subjects.map((s: any) => (
+                                     <SelectItem key={s._id} value={s._id}>
+                                       {s.name}{s.abbreviation ? ` (${s.abbreviation})` : ""}
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                             )}
+                           </div>
 
                           <div>
                             <Label>Room (Optional)</Label>
-                            <Input
-                              placeholder="e.g., C-305"
-                              value={slot.room || ""}
-                              onChange={(e) => updateSlot(index, "room", e.target.value)}
+                            <Select
+                              value={slot.room || "none"}
+                              onValueChange={(value) => updateSlot(index, "room", value === "none" ? "" : value)}
                               disabled={slot.type === "break" || slot.type === "mini-project"}
-                            />
+                            >
+                              <SelectTrigger className="truncate">
+                                <SelectValue placeholder="Select a room" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No room assigned</SelectItem>
+                                {rooms.map((room: any) => (
+                                  <SelectItem key={room._id} value={room.name}>
+                                    {room.name} ({room.type})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Batch (Optional)</Label>
+                            <Select
+                              value={slot.batchId || (slot.batchName || "none")}
+                              onValueChange={(value) => {
+                                if (value === "none") {
+                                  updateSlotMany(index, { batchId: undefined, batchName: "none" })
+                                } else {
+                                  const b = batches.find((x: any) => x._id === value)
+                                  updateSlotMany(index, { batchId: value, batchName: b ? b.name : "" })
+                                }
+                              }}
+                              disabled={slot.type === "break" || slot.type === "mini-project"}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select batch" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No batch</SelectItem>
+                                {batches.map((b: any) => (
+                                  <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           {slot.type !== "break" && slot.type !== "mini-project" && (
                             <>
-                              <div className="md:col-span-3">
+                              <div className="md:col-span-2 lg:col-span-3">
                                 <Label>Faculty (link account)</Label>
                                 <Select
+                                  value={slot.groupId || ""}
                                   onValueChange={async (groupId) => {
-                                    await loadMembers(groupId)
-                                    updateSlot(index, "faculty", "")
-                                    updateSlot(index, "facultyUserId", undefined)
-                                  }}
+                                     await loadMembers(groupId)
+                                     updateSlotMany(index, { faculty: "", facultyUserId: undefined, groupId })
+                                   }}
                                 >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select group" />
@@ -393,28 +552,59 @@ export default function EditTimetablePage() {
                                 </Select>
 
                                 <Select
-                                  onValueChange={(memberJson) => {
-                                    const member = JSON.parse(memberJson)
-                                    updateSlot(index, "faculty", member.name)
-                                    updateSlot(index, "facultyUserId", member._id)
+                                  value={slot.facultyUserId || ""}
+                                  onValueChange={(memberId) => {
+                                    if (!memberId) return
+                                    const members = slot.groupId ? (groupIdToMembers[slot.groupId] as any[] | undefined) : undefined
+                                    const found = members?.find((m: any) => m._id === memberId)
+                                    const selectedName = found ? found.name : (user && user._id === memberId ? user.name : "")
+                                    if (!selectedName) return
+                                    updateSlotMany(index, { faculty: selectedName, facultyUserId: memberId })
+                                    // If HOD assigns themselves and no group is selected, set a group automatically
+                                    if (user && user.role === 'hod' && memberId === user._id && !slot.groupId) {
+                                      const hodGroup = groups.find((g: any) => g._id && groupIdToMembers[g._id]?.some((m: any) => m._id === user._id))
+                                      if (hodGroup) {
+                                        updateSlot(index, "groupId", hodGroup._id)
+                                      } else if (groups.length > 0) {
+                                        updateSlot(index, "groupId", groups[0]._id)
+                                      }
+                                    }
                                   }}
+                                  disabled={!slot.groupId && !(user && user.role === 'hod')}
                                 >
                                   <SelectTrigger>
                                     <SelectValue placeholder={slot.faculty ? slot.faculty : "Select faculty member"} />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {Object.entries(groupIdToMembers).flatMap(([gid, members]) =>
-                                      (members as any[])
-                                        .filter((m) => m.role === "faculty")
-                                        .map((m) => (
-                                          <SelectItem key={`${gid}-${m._id}`} value={JSON.stringify({ _id: m._id, name: m.name })}>
-                                            {m.name}
+                                    {slot.groupId && groupIdToMembers[slot.groupId] ? (
+                                      <>
+                                        {/* Ensure currently selected value is visible even if not in the fetched list */}
+                                        {slot.facultyUserId && !(groupIdToMembers[slot.groupId] as any[]).some((m: any) => m._id === slot.facultyUserId) && (
+                                          <SelectItem value={slot.facultyUserId}>
+                                            {slot.faculty || "Selected faculty"}
                                           </SelectItem>
-                                        ))
-                                    )}
-                                    {user && user.role === 'hod' && (
-                                      <SelectItem value={JSON.stringify({ _id: user._id, name: user.name })}>
+                                        )}
+                                        {(groupIdToMembers[slot.groupId] as any[])
+                                          .filter((m) => m.role === "faculty")
+                                          .map((m) => (
+                                            <SelectItem key={m._id} value={m._id}>
+                                              {m.name}
+                                            </SelectItem>
+                                          ))}
+                                        {user && user.role === 'hod' && (
+                                          <SelectItem value={user._id}>
+                                            Assign myself (HOD)
+                                          </SelectItem>
+                                        )}
+                                      </>
+                                    ) : user && user.role === 'hod' ? (
+                                      // HOD can assign themselves even without selecting a group
+                                      <SelectItem value={user._id}>
                                         Assign myself (HOD)
+                                      </SelectItem>
+                                    ) : (
+                                      <SelectItem value="" disabled>
+                                        Select a group first
                                       </SelectItem>
                                     )}
                                   </SelectContent>

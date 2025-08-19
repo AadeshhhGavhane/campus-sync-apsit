@@ -158,15 +158,15 @@ export default function SignupPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="departmentName" className="text-gray-700 font-medium">Department</Label>
-                  <Input
-                    id="departmentName"
-                    type="text"
-                    placeholder="Enter your department name"
-                    value={formData.departmentName}
-                    onChange={(e) => setFormData({ ...formData, departmentName: e.target.value })}
-                    required
-                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-blue-300"
-                  />
+                  <Select value={formData.departmentName} onValueChange={(value) => setFormData({ ...formData, departmentName: value })}>
+                    <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-blue-300">
+                      <SelectValue placeholder="Select your department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Information Technology">Information Technology</SelectItem>
+                      <SelectItem value="Computer Engineering">Computer Engineering</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {error && (
