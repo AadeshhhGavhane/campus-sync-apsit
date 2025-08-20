@@ -151,8 +151,8 @@ export default function CreateTimetablePage() {
         }
         return false
       }
-      // For other slot types, title required
-      if (!slot.title) {
+      // For lecture/lab/honors, title required (mentoring does not require title)
+      if (["lecture","lab","honors"].includes(slot.type) && !slot.title) {
         return true
       }
       // Room is mandatory for lecture, lab, honors
