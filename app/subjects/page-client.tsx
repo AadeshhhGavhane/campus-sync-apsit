@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSubjects } from "@/hooks/use-app-data"
 
 interface Subject {
 	_id: string
@@ -29,12 +30,19 @@ interface Subject {
 }
 
 export default function SubjectsPageClient({ subjects: initialSubjects }: { subjects: Subject[] }) {
+	const { subjects: cachedSubjects } = useSubjects()
 	const [subjects, setSubjects] = useState<Subject[]>(initialSubjects)
 	const [showForm, setShowForm] = useState(false)
 	const [editing, setEditing] = useState<Subject | null>(null)
 	const [formData, setFormData] = useState({ name: "", abbreviation: "", category: "" })
 	const [error, setError] = useState("")
 	const [loading, setLoading] = useState(false)
+
+	useEffect(() => {
+		if (cachedSubjects && cachedSubjects.length > 0) {
+			setSubjects(cachedSubjects as any)
+		}
+	}, [cachedSubjects])
 
 	const reset = () => {
 		setFormData({ name: "", abbreviation: "", category: "" })

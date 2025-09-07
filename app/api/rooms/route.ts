@@ -27,34 +27,36 @@ export async function GET() {
           .toArray()
       }
     } else {
-      // Students/Faculty see rooms from groups they're members of
+      // Students/Faculty: list rooms for organizations inferred from their groups
       const memberships = await db
         .collection("memberships")
         .find({ userId: new ObjectId(user._id) })
         .toArray()
 
-      const groupIds = memberships.map((m) => m.groupId)
+      const groupIds = memberships.map((m) => m.groupId).filter(Boolean)
       if (groupIds.length > 0) {
-        // Get rooms that are used in timetables assigned to user's groups
-        const timetables = await db
-          .collection("timetables")
-          .find({ assignedGroups: { $in: groupIds } })
+        const groups = await db
+          .collection("groups")
+          .find({ _id: { $in: groupIds } })
+          .project({ _id: 1, organizationId: 1 })
           .toArray()
-
-        const roomNames = new Set<string>()
-        timetables.forEach(timetable => {
-          timetable.slots?.forEach((slot: any) => {
-            if (slot.room) roomNames.add(slot.room)
-          })
-        })
-
-        if (roomNames.size > 0) {
+        const orgIdSet = new Set<string>()
+        for (const g of groups) {
+          if (g.organizationId) orgIdSet.add(String(g.organizationId))
+        }
+        const orgIds = Array.from(orgIdSet).map((id) => new ObjectId(id))
+        if (orgIds.length > 0) {
           rooms = await db
             .collection("rooms")
-            .find({ 
-              organizationId: { $in: groupIds.map(() => new ObjectId(user.organizationId!)) },
-              name: { $in: Array.from(roomNames) }
-            })
+            .find({ organizationId: { $in: orgIds } })
+            .sort({ name: 1 })
+            .toArray()
+        } else if (user.organizationId) {
+          // Fallback to user's organization if present
+          const orgId = typeof user.organizationId === 'string' ? new ObjectId(user.organizationId) : user.organizationId
+          rooms = await db
+            .collection("rooms")
+            .find({ organizationId: orgId })
             .sort({ name: 1 })
             .toArray()
         }

@@ -28,7 +28,7 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb"
 import { CardSkeleton } from "@/components/ui/skeleton"
-import { useUser, useGroups, useCalendars, useTimetables } from "@/hooks/use-app-data"
+import { useUser, useGroups, useCalendars, useTimetables, useRooms } from "@/hooks/use-app-data"
 
 // Helper functions
 const getDayName = (date: Date) => {
@@ -73,6 +73,7 @@ export default function HomePageClient() {
   const { groups, isLoading: groupsLoading } = useGroups()
   const { calendars, isLoading: calendarsLoading } = useCalendars()
   const { timetables, isLoading: timetablesLoading } = useTimetables()
+  const { rooms } = useRooms()
 
   // Get current date info
   const today = new Date()
@@ -158,6 +159,38 @@ export default function HomePageClient() {
     )
   const myTodaySlots = mySlotsForDay(dayIndex)
   const myTomorrowSlots = mySlotsForDay(tomorrowIndex)
+
+  // Availability helpers
+  const toMinutes = (t: string) => {
+    const [h, m] = t.split(":").map(Number)
+    return h * 60 + m
+  }
+  const rangeLabel = (s: any) => `${formatTimeToAMPM(s.startTime)} - ${formatTimeToAMPM(s.endTime)}`
+  const slotsForDay = (idx: number) =>
+    timetables.flatMap((t: any) => (t.slots || [])
+      .filter((s: any) => (s.dayOfWeek || '').toLowerCase() === dayNameFromIndex(idx).toLowerCase()))
+  const todaySlots = slotsForDay(dayIndex)
+  const windowKeySet = new Set<string>(todaySlots.map((s: any) => `${s.startTime}|${s.endTime}`))
+  const windowKeys = Array.from(windowKeySet)
+    .map((k) => ({ startTime: (k as string).split("|")[0], endTime: (k as string).split("|")[1] }))
+    .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime))
+
+  const computeAvailability = (win: { startTime: string; endTime: string }) => {
+    const busyToday = todaySlots.filter((s: any) => s.startTime === win.startTime && s.endTime === win.endTime)
+    const busyRoomNames = new Set<string>(busyToday.map((s: any) => s.room).filter(Boolean))
+    const busyFacultyIds = new Set<string>(busyToday.map((s: any) => s.facultyUserId).filter(Boolean))
+    const freeRooms = (rooms || []).filter((r: any) => !busyRoomNames.has(r.name))
+    const freeLabs = freeRooms.filter((r: any) => (r.type || '').toLowerCase().includes('lab'))
+    // Derive faculty pool from timetable slots (works for HOD org-wide and for others within visible timetables)
+    const facultyPoolMap = new Map<string, string>()
+    todaySlots.forEach((s: any) => {
+      if (s.facultyUserId && s.faculty) facultyPoolMap.set(String(s.facultyUserId), s.faculty)
+    })
+    const freeFaculty = Array.from(facultyPoolMap.entries())
+      .filter(([fid]) => !busyFacultyIds.has(fid))
+      .map(([_, name]) => name)
+    return { freeRooms, freeLabs, freeFaculty }
+  }
 
   return (
     <DashboardLayout>
@@ -407,6 +440,78 @@ export default function HomePageClient() {
             </Card>
           </div>
         )}
+
+        {/* Availability Today */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card className="animate-in fade-in-0 duration-500" style={{animationDelay: '650ms'}}>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Building2 className="h-5 w-5 mr-2" /> Free Rooms & Labs Today
+              </CardTitle>
+              <CardDescription>Based on current timetables</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {windowKeys.length === 0 ? (
+                <div className="text-sm text-gray-600">No time windows configured today.</div>
+              ) : (
+                <div className="space-y-3">
+                  {windowKeys.slice(0, 6).map((win, idx) => {
+                    const { freeRooms, freeLabs } = computeAvailability(win)
+                    return (
+                      <div key={`rooms-win-${idx}`} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-sm">{formatTimeToAMPM(win.startTime)} - {formatTimeToAMPM(win.endTime)}</div>
+                          <Badge variant="outline" className="text-xs">{freeRooms.length} rooms free</Badge>
+                        </div>
+                        <div className="text-xs text-gray-700">
+                          {freeLabs.length > 0 && (
+                            <span>Labs: {freeLabs.slice(0, 6).map((r: any) => r.name).join(', ')}{freeLabs.length > 6 ? '…' : ''}</span>
+                          )}
+                          {freeLabs.length > 0 && freeRooms.length > freeLabs.length && ' • '}
+                          {freeRooms.length > 0 && (
+                            <span>Rooms: {freeRooms.slice(0, 6).map((r: any) => r.name).join(', ')}{freeRooms.length > 6 ? '…' : ''}</span>
+                          )}
+                          {freeRooms.length === 0 && <span>No rooms free</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="animate-in fade-in-0 duration-500" style={{animationDelay: '700ms'}}>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center">
+                <Users className="h-5 w-5 mr-2" /> Free Faculty Today
+              </CardTitle>
+              <CardDescription>Based on current timetables</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {windowKeys.length === 0 ? (
+                <div className="text-sm text-gray-600">No time windows configured today.</div>
+              ) : (
+                <div className="space-y-3">
+                  {windowKeys.slice(0, 6).map((win, idx) => {
+                    const { freeFaculty } = computeAvailability(win)
+                    return (
+                      <div key={`fac-win-${idx}`} className="p-3 border rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-sm">{formatTimeToAMPM(win.startTime)} - {formatTimeToAMPM(win.endTime)}</div>
+                          <Badge variant="outline" className="text-xs">{freeFaculty.length} free</Badge>
+                        </div>
+                        <div className="text-xs text-gray-700">
+                          {freeFaculty.length > 0 ? freeFaculty.slice(0, 8).join(', ') : 'No faculty free'}{freeFaculty.length > 8 ? '…' : ''}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         <Card className="bg-gradient-to-r from-gray-50 to-blue-50 border-gray-200 animate-in fade-in-0 duration-500" style={{animationDelay: '600ms'}}>

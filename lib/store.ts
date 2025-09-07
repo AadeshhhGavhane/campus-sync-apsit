@@ -51,6 +51,10 @@ interface AppState {
   groups: Group[]
   calendars: Calendar[]
   timetables: Timetable[]
+  rooms: any[]
+  subjects: any[]
+  labs: any[]
+  batches: any[]
   
   // Loading states
   loading: {
@@ -75,6 +79,10 @@ interface AppState {
   setGroups: (groups: Group[]) => void
   setCalendars: (calendars: Calendar[]) => void
   setTimetables: (timetables: Timetable[]) => void
+  setRooms: (rooms: any[]) => void
+  setSubjects: (subjects: any[]) => void
+  setLabs: (labs: any[]) => void
+  setBatches: (batches: any[]) => void
   
   setLoading: (key: keyof AppState['loading'], value: boolean) => void
   setError: (key: keyof AppState['errors'], value: string | null) => void
@@ -100,6 +108,10 @@ export const useAppStore = create<AppState>()(
         groups: [],
         calendars: [],
         timetables: [],
+        rooms: [],
+        subjects: [],
+        labs: [],
+        batches: [],
         
         loading: {
           user: false,
@@ -122,6 +134,10 @@ export const useAppStore = create<AppState>()(
         setGroups: (groups) => set({ groups }),
         setCalendars: (calendars) => set({ calendars }),
         setTimetables: (timetables) => set({ timetables }),
+        setRooms: (rooms) => set({ rooms }),
+        setSubjects: (subjects) => set({ subjects }),
+        setLabs: (labs) => set({ labs }),
+        setBatches: (batches) => set({ batches }),
         
         setLoading: (key, value) => 
           set((state) => ({ 
@@ -236,6 +252,10 @@ export const useAppStore = create<AppState>()(
             groups: [],
             calendars: [],
             timetables: [],
+            rooms: [],
+            subjects: [],
+            labs: [],
+            batches: [],
             loading: {
               user: false,
               groups: false,
@@ -256,6 +276,10 @@ export const useAppStore = create<AppState>()(
             groups: [],
             calendars: [],
             timetables: [],
+            rooms: [],
+            subjects: [],
+            labs: [],
+            batches: [],
             errors: {
               user: null,
               groups: null,

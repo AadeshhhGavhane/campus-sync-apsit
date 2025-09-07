@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,16 +9,24 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Plus, Edit, Trash2, Layers } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
+import { useBatches } from "@/hooks/use-app-data"
 
 interface Batch { _id: string; name: string; organizationId: string; createdBy: string; createdAt: string }
 
 export default function BatchesPageClient({ batches: initialBatches }: { batches: Batch[] }) {
+  const { batches: cachedBatches } = useBatches()
   const [batches, setBatches] = useState<Batch[]>(initialBatches)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState<Batch | null>(null)
   const [formData, setFormData] = useState({ name: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (cachedBatches && cachedBatches.length > 0) {
+      setBatches(cachedBatches as any)
+    }
+  }, [cachedBatches])
 
   const reset = () => { setFormData({ name: "" }); setError(""); setEditing(null); setShowForm(false) }
 

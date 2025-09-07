@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { useRooms } from "@/hooks/use-app-data"
 
 interface Room {
   _id: string
@@ -41,6 +42,7 @@ const ROOM_TYPES = [
 ]
 
 export default function RoomsPageClient({ rooms: initialRooms }: RoomsPageClientProps) {
+  const { rooms: cachedRooms } = useRooms()
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
@@ -50,6 +52,13 @@ export default function RoomsPageClient({ rooms: initialRooms }: RoomsPageClient
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // Hydrate from cache/store for instant navigation
+  useEffect(() => {
+    if (cachedRooms && cachedRooms.length > 0) {
+      setRooms(cachedRooms as any)
+    }
+  }, [cachedRooms])
 
   const resetForm = () => {
     setFormData({ name: "", type: "" })
