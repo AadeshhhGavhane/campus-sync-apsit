@@ -437,12 +437,17 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
+<<<<<<< HEAD
        <footer className="py-12 bg-gray-900 text-white">
+=======
+      <footer className="py-12 bg-gray-900 text-white">
+>>>>>>> 39659dcb95583dae2e6ab9c2b74db72afceed01b
         <div className="container mx-auto px-4 text-center">
           <div className="flex items-center justify-center mb-6">
             <img src="/apsit.png" alt="APSIT" className="h-8 w-8 mr-3" />
             <span className="text-xl font-bold">APSIT College</span>
           </div>
+<<<<<<< HEAD
           
           <p className="text-gray-400 mb-4">
             CampusSync - Streamlined campus management for APSIT College
@@ -481,6 +486,12 @@ export default function LandingPage() {
 
 
           <p className="text-sm text-gray-500 mt-8">
+=======
+          <p className="text-gray-400 mb-4">
+            CampusSync - Streamlined campus management for APSIT College
+          </p>
+          <p className="text-sm text-gray-500">
+>>>>>>> 39659dcb95583dae2e6ab9c2b74db72afceed01b
             © 2025 APSIT College. All rights reserved.
           </p>
         </div>
