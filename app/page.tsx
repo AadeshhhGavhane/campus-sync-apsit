@@ -437,54 +437,59 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-       <footer className="py-12 bg-gray-900 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <div className="flex items-center justify-center mb-6">
-            <img src="/apsit.png" alt="APSIT" className="h-8 w-8 mr-3" />
-            <span className="text-xl font-bold">APSIT College</span>
-          </div>
-          
-          <p className="text-gray-400 mb-4">
-            CampusSync - Streamlined campus management for APSIT College
-          </p>
+       
+      {/* Footer */}
+<footer className="py-12 bg-gray-900 text-white">
+  <div className="container mx-auto px-4 text-center">
+    {/* Logo */}
+    <div className="flex items-center justify-center mb-6">
+      <img src="/apsit.png" alt="APSIT" className="h-8 w-8 mr-3" />
+      <span className="text-xl font-bold">APSIT College</span>
+    </div>
 
-          {/* Creative Developer Credits */}
-           <div className="mt-6 flex flex-col items-center space-y-2">
-  <p className="text-sm font-semibold text-blue-400 tracking-wide uppercase">
-    Crafted by
-  </p>
-  <div className="flex flex-wrap justify-center gap-3">
-    <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
-      Aadesh Gavhane
-    </span>
-    <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
-      Siddhi Jadhav
-    </span>
-    <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
-      Pooja Maskare
-    </span>
-    <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
-      Kartika Tithe
-    </span>
-  </div>
-
-  {/* Guide Section */}
-  <div className="mt-6 text-center">
-    <p className="text-sm font-semibold text-green-400 tracking-wide uppercase">
-      Guided by
+    {/* Tagline */}
+    <p className="text-gray-400 mb-6">
+      CampusSync - Streamlined campus management for APSIT College
     </p>
-    <span className="mt-2 inline-block px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium shadow-md hover:bg-gray-700 transition">
-      Prof. Vishal Badgujar
-    </span>
+
+    {/* Developer Credits */}
+    <div className="mt-6">
+      <p className="text-sm font-semibold text-blue-400 tracking-wide uppercase mb-3">
+        Crafted by
+      </p>
+      <div className="flex flex-wrap justify-center gap-3">
+        <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
+          Aadesh Gavhane
+        </span>
+        <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
+          Siddhi Jadhav
+        </span>
+        <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
+          Pooja Maskare
+        </span>
+        <span className="px-4 py-1 bg-gray-800 text-white rounded-full text-sm font-medium shadow-md hover:bg-gray-700 transition">
+          Kartika Tithe
+        </span>
+      </div>
+    </div>
+
+    {/* Guide Section */}
+    <div className="mt-8">
+      <p className="text-sm font-semibold text-green-400 tracking-wide uppercase mb-3">
+        Guided by
+      </p>
+      <span className="inline-block px-5 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium shadow-md hover:bg-gray-700 transition">
+        Prof. Vishal Badgujar
+      </span>
+    </div>
+
+    {/* Bottom Text */}
+    <p className="text-sm text-gray-500 mt-8">
+      © 2025 APSIT College. All rights reserved.
+    </p>
   </div>
-</div>
+</footer>
 
-
-          <p className="text-sm text-gray-500 mt-8">
-            © 2025 APSIT College. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </div>
     </>
   )
