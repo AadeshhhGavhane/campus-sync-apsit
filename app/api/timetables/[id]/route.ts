@@ -145,9 +145,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         return NextResponse.json({ error: "Invalid slot type" }, { status: 400 })
       }
 
-      // For non-break and non-mini-project slots, title is required
-      if (slot.type !== "break" && slot.type !== "mini-project" && !slot.title) {
-        return NextResponse.json({ error: "Title is required for lecture, lab, honors, and mentoring slots" }, { status: 400 })
+      // For lecture/lab/honors, title is required (mentoring does not require title)
+      if (["lecture","lab","honors"].includes(slot.type) && !slot.title) {
+        return NextResponse.json({ error: "Title is required for lecture, lab, and honors slots" }, { status: 400 })
       }
     }
 
