@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase()
 
     // Find user
-    const user = await db.collection("users").findOne({ email })
+    const user = await db.collection("users").findOne({ email: email.toLowerCase() })
+
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
