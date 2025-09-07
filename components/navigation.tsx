@@ -7,16 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Home, Users, Calendar, Clock, Plus, Menu, LogOut, X } from "lucide-react"
+import { Home, Users, Calendar, Clock, Plus, Menu, LogOut, X, Building2, BookOpen, FlaskConical, Layers } from "lucide-react"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useUser, useLogout, usePrefetchData } from "@/hooks/use-app-data"
-
-const navItems = [
-  { href: "/home", title: "Dashboard", icon: Home },
-  { href: "/groups", title: "Groups", icon: Users },
-  { href: "/timetables", title: "Timetables", icon: Clock },
-  { href: "/calendars", title: "Calendars", icon: Calendar },
-]
 
 export default function Navigation({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -65,6 +58,17 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
     return null
   }
 
+  const navItems = [
+    { href: "/home", title: "Dashboard", icon: Home },
+    { href: "/groups", title: "Groups", icon: Users },
+    { href: "/timetables", title: "Timetables", icon: Clock },
+    { href: "/calendars", title: "Calendars", icon: Calendar },
+    ...(user.role === "hod" ? [{ href: "/rooms", title: "Rooms", icon: Building2 }] : []),
+    ...(user.role === "hod" ? [{ href: "/subjects", title: "Subjects", icon: BookOpen }] : []),
+    ...(user.role === "hod" ? [{ href: "/labs", title: "Labs", icon: FlaskConical }] : []),
+    ...(user.role === "hod" ? [{ href: "/batches", title: "Batches", icon: Layers }] : []),
+  ]
+
   const NavContent = () => (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b">
@@ -104,47 +108,7 @@ export default function Navigation({ children }: { children: React.ReactNode }) 
             )
           })}
         </ul>
-
-        {user.role === "hod" && (
-          <div className="mt-8">
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Quick Actions</h3>
-            <div className="space-y-2">
-              <Button 
-                asChild 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start bg-transparent hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 transform hover:scale-105"
-              >
-                <Link href="/groups/create">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Group
-                </Link>
-              </Button>
-              <Button 
-                asChild 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start bg-transparent hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 transform hover:scale-105"
-              >
-                <Link href="/timetables/create">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Timetable
-                </Link>
-              </Button>
-              <Button 
-                asChild 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start bg-transparent hover:bg-blue-50 hover:border-blue-300 transition-all duration-300 transform hover:scale-105"
-              >
-                <Link href="/calendars/create">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Calendar
-                </Link>
-              </Button>
-            </div>
-          </div>
-        )}
+      
       </nav>
 
       <div className="p-4 border-t">

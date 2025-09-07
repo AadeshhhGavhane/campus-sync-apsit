@@ -10,6 +10,10 @@ export const queryKeys = {
   groups: ['groups'],
   calendars: ['calendars'],
   timetables: ['timetables'],
+  rooms: ['rooms'],
+  subjects: ['subjects'],
+  labs: ['labs'],
+  batches: ['batches'],
 }
 
 // Custom hook for user data
@@ -160,6 +164,95 @@ export function useTimetables() {
     error: query.error,
     refetch: query.refetch,
   }
+}
+
+// Custom hook for rooms data
+export function useRooms() {
+  const { user } = useUser()
+  
+  const query = useQuery({
+    queryKey: queryKeys.rooms,
+    queryFn: async () => {
+      const response = await fetch('/api/rooms')
+      if (!response.ok) {
+        throw new Error('Failed to fetch rooms')
+      }
+      const data = await response.json()
+      return data.rooms || []
+    },
+    enabled: !!user, // Only fetch if user is authenticated
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+  })
+
+  return {
+    rooms: query.data || [],
+    isLoading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
+  }
+}
+
+// Custom hook for subjects data
+export function useSubjects() {
+  const { user } = useUser()
+  const query = useQuery({
+    queryKey: queryKeys.subjects,
+    queryFn: async () => {
+      const response = await fetch('/api/subjects')
+      if (!response.ok) {
+        throw new Error('Failed to fetch subjects')
+      }
+      const data = await response.json()
+      return data.subjects || []
+    },
+    enabled: !!user,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+  })
+  return { subjects: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
+}
+
+export function useLabs() {
+  const { user } = useUser()
+  const query = useQuery({
+    queryKey: queryKeys.labs,
+    queryFn: async () => {
+      const res = await fetch('/api/labs')
+      if (!res.ok) throw new Error('Failed to fetch labs')
+      const data = await res.json()
+      return data.labs || []
+    },
+    enabled: !!user,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+  })
+  return { labs: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
+}
+
+export function useBatches() {
+  const { user } = useUser()
+  const query = useQuery({
+    queryKey: queryKeys.batches,
+    queryFn: async () => {
+      const res = await fetch('/api/batches')
+      if (!res.ok) throw new Error('Failed to fetch batches')
+      const data = await res.json()
+      return data.batches || []
+    },
+    enabled: !!user,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+  })
+  return { batches: query.data || [], isLoading: query.isLoading, error: query.error, refetch: query.refetch }
 }
 
 // Custom hook for logout mutation

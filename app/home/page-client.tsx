@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Star,
   Zap,
-  Home
+  Home,
+  Building2
 } from "lucide-react"
 import Link from "next/link"
 import DashboardLayout from "@/components/dashboard-layout"
@@ -435,6 +436,14 @@ export default function HomePageClient() {
                   <span className="text-sm">Groups</span>
                 </Link>
               </Button>
+              {user.role === "hod" && (
+                <Button asChild variant="outline" className="h-auto p-4 flex-col space-y-2 hover:scale-105 transition-all duration-200">
+                  <Link href="/rooms">
+                    <Building2 className="h-5 w-5" />
+                    <span className="text-sm">Rooms</span>
+                  </Link>
+                </Button>
+              )}
               {user.role !== "hod" && (
                 <Button asChild variant="outline" className="h-auto p-4 flex-col space-y-2 hover:scale-105 transition-all duration-200">
                   <Link href="/join">

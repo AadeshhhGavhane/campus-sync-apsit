@@ -25,6 +25,7 @@ interface TimetableSlot {
   endTime: string
   type: string
   title?: string
+  room?: string
 }
 
 interface Timetable {
@@ -217,15 +218,15 @@ export default function TimetablesPageClient() {
                         <p className="text-sm font-medium text-gray-700">Weekly Schedule:</p>
                         <div className="space-y-1">
                           {timetable.slots.slice(0, 3).map((slot: TimetableSlot, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between text-xs">
-                              <span className="text-gray-600 truncate">
-                                {slot.dayOfWeek} - {slot.title || slot.type}
-                              </span>
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {formatTimeRange(slot.startTime, slot.endTime)}
-                              </Badge>
-                            </div>
-                          ))}
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="text-gray-600 truncate">
+                                  {slot.dayOfWeek} - {slot.title || slot.type}{slot.room ? ` • Room ${slot.room}` : ''}
+                                </span>
+                                <Badge variant="outline" className="ml-2 text-xs">
+                                  {formatTimeRange(slot.startTime, slot.endTime)}
+                                </Badge>
+                              </div>
+                            ))}
                           {timetable.slots.length > 3 && (
                             <p className="text-xs text-gray-500">+{timetable.slots.length - 3} more slots</p>
                           )}

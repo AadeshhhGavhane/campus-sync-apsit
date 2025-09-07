@@ -82,11 +82,76 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase()
 
+    // Normalize subject title and batch name if ids are provided
+    const normalizedSlots = await (async () => {
+      // collect subject ids and batch ids if provided
+      const subjectIds = new Set<string>()
+      const batchIds = new Set<string>()
+      for (const s of slots as any[]) {
+        if (s.subjectId) subjectIds.add(String(s.subjectId))
+        if (s.batchId) batchIds.add(String(s.batchId))
+      }
+      const idToSubjectName = new Map<string, string>()
+      if (subjectIds.size > 0) {
+        const ids = Array.from(subjectIds).map((id) => new ObjectId(id))
+        const subjects = await db.collection('subjects').find({ _id: { $in: ids } }).project({ _id: 1, name: 1 }).toArray()
+        subjects.forEach((sub) => idToSubjectName.set(sub._id.toString(), sub.name))
+      }
+      const idToBatchName = new Map<string, string>()
+      if (batchIds.size > 0) {
+        const ids = Array.from(batchIds).map((id) => new ObjectId(id))
+        const batches = await db.collection('batches').find({ _id: { $in: ids } }).project({ _id: 1, name: 1 }).toArray()
+        batches.forEach((b) => idToBatchName.set(b._id.toString(), b.name))
+      }
+      const cleaned = (slots as any[]).map((s) => {
+        const copy: any = { ...s }
+        if (copy.subjectId && !copy.title) {
+          const name = idToSubjectName.get(String(copy.subjectId))
+          if (name) copy.title = name
+        }
+        if (copy.batchId && !copy.batchName) {
+          const name = idToBatchName.get(String(copy.batchId))
+          if (name) copy.batchName = name
+        }
+        if (copy.room === 'none') copy.room = ''
+        if (copy.batchName === 'none') copy.batchName = ''
+        return copy
+      })
+      const toMinutes = (t: string) => {
+        const [h, m] = t.split(':').map((x: string) => parseInt(x, 10))
+        return h * 60 + m
+      }
+      const typeRank = (type: string) => {
+        const order = ['lecture', 'lab', 'honors', 'mentoring', 'mini-project', 'break']
+        const idx = order.indexOf(type)
+        return idx === -1 ? 999 : idx
+      }
+      const dayRank = (day: string) => {
+        const order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        const idx = order.indexOf(day)
+        return idx === -1 ? 999 : idx
+      }
+      cleaned.sort((a: any, b: any) => {
+        const da = dayRank(a.dayOfWeek || '')
+        const db = dayRank(b.dayOfWeek || '')
+        if (da !== db) return da - db
+        const ta = toMinutes(a.startTime)
+        const tb = toMinutes(b.startTime)
+        if (ta !== tb) return ta - tb
+        const ra = typeRank(a.type)
+        const rb = typeRank(b.type)
+        if (ra !== rb) return ra - rb
+        const sa = (a.title || '').localeCompare(b.title || '')
+        return sa
+      })
+      return cleaned
+    })()
+
     // Create timetable
     const timetable = {
       name,
       description: description || "",
-      slots,
+      slots: normalizedSlots,
       organizationId: new ObjectId(user.organizationId!),
       createdBy: new ObjectId(user._id),
       assignedGroups: [], // Will be assigned later
