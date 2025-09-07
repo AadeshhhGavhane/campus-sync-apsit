@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Toaster } from '@/components/ui/sonner'
-import QueryProvider from '@/components/providers/query-provider'
-import AppInitializer from '@/components/app-initializer'
+import { MainProviders } from "@/components/providers/main-providers" 
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -24,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <style>{`
 html {
@@ -35,13 +33,11 @@ html {
         `}</style>
       </head>
       <body>
-        <QueryProvider>
-          <AppInitializer>
-            {children}
-          </AppInitializer>
-          <Toaster />
-        </QueryProvider>
+        <MainProviders>
+          {children}
+        </MainProviders>
       </body>
     </html>
   )
 }
+

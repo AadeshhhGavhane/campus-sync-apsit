@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-import Link from "next/link"
+import { AlertCircle, Eye, EyeOff } from "lucide-react" // Import icons
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import TopProgressBar from "@/components/ui/top-progress-bar"
 import { useQueryClient } from "@tanstack/react-query"
@@ -19,11 +19,11 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [showPassword, setShowPassword] = useState(false) // State for password visibility
   const router = useRouter()
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    // Delayed appearance for smooth card animation
     const timer = setTimeout(() => setShowForm(true), 100)
     return () => clearTimeout(timer)
   }, [])
@@ -44,10 +44,7 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (response.ok) {
-        // Clear all cached data since user is logging in
         queryClient.clear()
-        
-        // Small delay for better UX
         await new Promise(resolve => setTimeout(resolve, 800))
         router.push("/home")
       } else {
@@ -65,7 +62,6 @@ export default function LoginPage() {
       <TopProgressBar />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">
-          {/* Logo */}
           <div className="text-center">
             <img 
               src="/apsit.png" 
@@ -78,7 +74,6 @@ export default function LoginPage() {
             <p className="text-gray-600 mt-2">Sign in to your CampusSync account</p>
           </div>
 
-          {/* Login Form */}
           <Card className={`transition-all duration-500 ease-out transform ${
             showForm ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           } shadow-xl border-0`}>
@@ -109,17 +104,27 @@ export default function LoginPage() {
                     </span>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-gray-700 font-medium">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-blue-300"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-blue-300 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                    </button>
+                  </div>
                 </div>
 
                 {error && (

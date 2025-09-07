@@ -1,35 +1,47 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
 import { hashPassword, generateToken } from "@/lib/auth"
+import { z } from "zod" // Using Zod for validation
+
+// 1. Define a schema for validating the incoming data
+const signupSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().optional(), // Last name can be optional if you want
+  email: z.string().email({ message: "Invalid email format" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  role: z.enum(["hod", "faculty", "student"], { message: "Invalid role" }),
+  departmentName: z.string().min(1, { message: "Department is required" }),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, role, departmentName } = await request.json()
+    const body = await request.json()
 
-    // Validate required fields
-    if (!name || !email || !password || !role || !departmentName) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
+    // 2. Validate the request body against the schema
+    const validation = signupSchema.safeParse(body);
+    if (!validation.success) {
+      // Return the first validation error message
+      return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
     }
-
-    // Validate role
-    if (!["hod", "faculty", "student"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role" }, { status: 400 })
-    }
+    
+    // Destructure the validated data
+    const { firstName, lastName, email, password, role, departmentName } = validation.data;
 
     const db = await getDatabase()
 
     // Check if user already exists
     const existingUser = await db.collection("users").findOne({ email })
     if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 })
+      return NextResponse.json({ error: "User with this email already exists" }, { status: 409 }) // 409 Conflict is more appropriate
     }
 
     // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Create user
-    const user: { name: string; email: string; password: string; role: string; departmentName: string; createdAt: Date; organizationId?: string } = {
-      name,
+    // 3. Create the user object with the new fields
+    const user = {
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
       role,
@@ -38,33 +50,32 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection("users").insertOne(user)
+    const userId = result.insertedId;
+
+    let organizationId = undefined;
 
     // If HOD, create organization
     if (role === "hod") {
       const organization = {
         name: departmentName,
-        hodId: result.insertedId,
+        hodId: userId,
         createdAt: new Date(),
       }
-
       const orgResult = await db.collection("organizations").insertOne(organization)
+      organizationId = orgResult.insertedId;
 
       // Update user with organizationId
-      await db
-        .collection("users")
-        .updateOne({ _id: result.insertedId }, { $set: { organizationId: orgResult.insertedId } })
-
-      user.organizationId = orgResult.insertedId.toString()
+      await db.collection("users").updateOne({ _id: userId }, { $set: { organizationId } })
     }
 
-    // Generate JWT token
+    // 4. Generate JWT token with the combined full name
     const userForToken = {
-      _id: result.insertedId.toString(),
-      name,
+      _id: userId.toString(),
+      name: `${firstName} ${lastName || ''}`.trim(), // Combine first and last name
       email,
       role,
       departmentName,
-      organizationId: user.organizationId,
+      organizationId: organizationId?.toString(),
     }
 
     const token = generateToken(userForToken as any)
